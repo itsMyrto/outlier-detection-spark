@@ -94,3 +94,18 @@ plt.title('Scatter Plot of 5 Final Clusters')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
+
+
+
+
+# APPLY DBSCAN TO EACH CLUSTER AND DETECT THE OUTLIERS
+
+# This for loop iterates through all clusters, i ve made it for you so you don't have to understand my code
+# Here, the cluster variable in every loop contains a pandas dataframe for each cluster. 
+# You have to perform dbscan in every cluster and save the outliers. Then, print the outliers and make a cute plot
+# if you need something from the df dataframe it contains three columns:
+# one for x, one for y and one called 'cluster' that contains the cluster id.
+
+for cluster_id in np.unique(df['cluster']):
+    cluster = df[df['cluster'] == cluster_id][['x', 'y']]
+    # Perform DBSCAN
