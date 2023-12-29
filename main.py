@@ -1,12 +1,14 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from keras import Sequential
-from keras.src.engine.input_layer import InputLayer
-from keras.src.layers import Dense
-from keras.src.optimizers import Adam
+from kneed import KneeLocator
+# from keras import Sequential
+# from keras.src.engine.input_layer import InputLayer
+# from keras.src.layers import Dense
+# from keras.src.optimizers import Adam
+from sklearn.neighbors import NearestNeighbors, LocalOutlierFactor
 from scipy.spatial.distance import squareform, pdist
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import MinMaxScaler
 
 # Reading the data from the csv and storing it to a panda dataframe
@@ -26,8 +28,8 @@ scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
 
 # Saving the transformed data back to the df
-df['x'] = X_train[:, 0]
-df['y'] = X_train[:, 1]
+# df['x'] = X_train[:, 0]
+# df['y'] = X_train[:, 1]
 
 # Running the kmeans algorithm using k>>5
 k = 100
@@ -115,12 +117,64 @@ plt.show()
 # if you need something from the df dataframe it contains three columns:
 # one for x, one for y and one called 'cluster' that contains the cluster id.
 
-total = 0
+# best parameters for DBSCAN
+min_samples = 4
+eps = 2.5
+
+count = 0
 for cluster_id in np.unique(df['cluster']):
     cluster = df[df['cluster'] == cluster_id][['x', 'y']]
-    print(cluster)
-    total = len(cluster) + total
-print(total)
+    cluster = np.array(cluster)
+    # Perform DBSCAN
+
+    # start k-plots
+    # neighbors = NearestNeighbors(n_neighbors=min_samples)
+    # neighbors_fit = neighbors.fit(cluster)
+    # distances, indices = neighbors_fit.kneighbors(cluster)
+    # distances = np.sort(distances, axis=0)
+    # distances = distances[:, 1]
+    # plt.plot(distances)
+    # plt.show()
+    # eps = [0.14, 0.15, 0.3, 0.25, 0.3] -> result
+    # end k-plots
+
+    # start DBSCAN
+    dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric='euclidean')
+    dbscan.fit(cluster)
+    labels = dbscan.labels_
+    outliers = np.where(labels == -1)[0]
+    # end DBSCAN
+
+    # start Z-Scores
+    # z_scores = (cluster - cluster.mean(axis=0)) / cluster.std(axis=0)
+    # # Calculate absolute value of Z-Score for each point
+    # abs_z_scores = np.max(np.abs(z_scores), axis=1)
+    # # Set a threshold for outliers (e.g., Z-Score greater than 3)
+    # threshold = 2.288
+    # outliers = np.where(abs_z_scores > threshold)[0]
+    # end Z-Scores
+
+    print(len(outliers))
+    plt.scatter(
+        cluster[:, 0],
+        cluster[:, 1],
+        label=f'Cluster {cluster_id}',
+        alpha=0.5,
+        c=preferable_colors[count]
+    )
+    plt.scatter(cluster[outliers, 0], cluster[outliers, 1], c="red", marker="x")
+    count += 1
+
+plt.title('Scatter Plot of Outliers')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+
+
+
+
+
+
 
 
 
