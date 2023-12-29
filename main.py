@@ -28,8 +28,8 @@ scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
 
 # Saving the transformed data back to the df
-# df['x'] = X_train[:, 0]
-# df['y'] = X_train[:, 1]
+df['x'] = X_train[:, 0]
+df['y'] = X_train[:, 1]
 
 # Running the kmeans algorithm using k>>5
 k = 100
@@ -118,8 +118,8 @@ plt.show()
 # one for x, one for y and one called 'cluster' that contains the cluster id.
 
 # best parameters for DBSCAN
-min_samples = 4
-eps = 2.5
+min_samples = 80
+eps = 0.03
 
 count = 0
 for cluster_id in np.unique(df['cluster']):
