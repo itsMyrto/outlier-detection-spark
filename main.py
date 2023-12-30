@@ -1,12 +1,11 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from kneed import KneeLocator
 # from keras import Sequential
 # from keras.src.engine.input_layer import InputLayer
 # from keras.src.layers import Dense
 # from keras.src.optimizers import Adam
-from sklearn.neighbors import NearestNeighbors, LocalOutlierFactor
+from sklearn.neighbors import NearestNeighbors
 from scipy.spatial.distance import squareform, pdist
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import MinMaxScaler
@@ -26,10 +25,6 @@ pd.set_option('display.float_format', '{:.8f}'.format)
 # Normalize data using the MinMax between [0,1]
 scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
-
-# Saving the transformed data back to the df
-df['x'] = X_train[:, 0]
-df['y'] = X_train[:, 1]
 
 # Running the kmeans algorithm using k>>5
 k = 100
@@ -87,6 +82,12 @@ while len(final_clusters) > 5:
             pairwise_distances_centers[merge_clusters[0], i] = np.linalg.norm(new_cluster_center - np.mean(X_train[df['cluster'] == i], axis=0))
             pairwise_distances_centers[i, merge_clusters[0]] = np.linalg.norm(new_cluster_center - np.mean(X_train[df['cluster'] == i], axis=0))
 
+# Storing a copy of the original data before normalization so that we can plot the original data later
+original_df = df.copy()
+
+# Saving the transformed data back to the df
+df['x'] = X_train[:, 0]
+df['y'] = X_train[:, 1]
 
 # Plotting the final clusters
 preferable_colors = ["#0766AD", "#29ADB2", "#D2DE32", "#B15EFF", "#952323"]
@@ -111,21 +112,22 @@ plt.show()
 
 # APPLY DBSCAN TO EACH CLUSTER AND DETECT THE OUTLIERS
 
-# This for loop iterates through all clusters, i ve made it for you so you don't have to understand my code
-# Here, the cluster variable in every loop contains a pandas dataframe for each cluster.
-# You have to perform dbscan in every cluster and save the outliers. Then, print the outliers and make a cute plot
-# if you need something from the df dataframe it contains three columns:
-# one for x, one for y and one called 'cluster' that contains the cluster id.
-
 # best parameters for DBSCAN
-min_samples = 80
-eps = 0.03
+min_samples = 22
+eps = 0.035
 
 count = 0
 for cluster_id in np.unique(df['cluster']):
+    # Get separately the normalized points of each cluster that was computed and saved earlier in the df
     cluster = df[df['cluster'] == cluster_id][['x', 'y']]
+    # Transforming the pandas dataframe to a numpy array in order to run DBSCAN for outlier detection
     cluster = np.array(cluster)
-    # Perform DBSCAN
+
+    # Get separately the original points of each cluster that was saved earlier in the original_df
+    # in order to plot the outliers on the original data
+    original_cluster = original_df[original_df['cluster'] == cluster_id][['x', 'y']]
+    # Transforming the pandas dataframe to a numpy array for easier plotting
+    original_cluster = np.array(original_cluster)
 
     # start k-plots
     # neighbors = NearestNeighbors(n_neighbors=min_samples)
@@ -135,13 +137,15 @@ for cluster_id in np.unique(df['cluster']):
     # distances = distances[:, 1]
     # plt.plot(distances)
     # plt.show()
-    # eps = [0.14, 0.15, 0.3, 0.25, 0.3] -> result
+    # eps = [0.004, 0.004, 0.005, 0.005, 0.005] -> result for min_samples=80
     # end k-plots
 
     # start DBSCAN
+    # Running the DBSCAN algorithm using the best parameters we found
     dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric='euclidean')
     dbscan.fit(cluster)
     labels = dbscan.labels_
+    # Saving the indexes of the outliers in each cluster
     outliers = np.where(labels == -1)[0]
     # end DBSCAN
 
@@ -154,29 +158,23 @@ for cluster_id in np.unique(df['cluster']):
     # outliers = np.where(abs_z_scores > threshold)[0]
     # end Z-Scores
 
-    print(len(outliers))
+    # Plot the original points of each cluster
     plt.scatter(
-        cluster[:, 0],
-        cluster[:, 1],
+        original_cluster[:, 0],
+        original_cluster[:, 1],
         label=f'Cluster {cluster_id}',
         alpha=0.5,
         c=preferable_colors[count]
     )
-    plt.scatter(cluster[outliers, 0], cluster[outliers, 1], c="red", marker="x")
+    # Plot on top of the original points of each cluster the outliers that were found
+    plt.scatter(original_cluster[outliers, 0], original_cluster[outliers, 1], c="red", marker="x")
     count += 1
 
-plt.title('Scatter Plot of Outliers')
+# Show final plot that contains every cluster and it's outliers
+plt.title('Scatter Plot of 5 Final Clusters and their Outliers')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
-
-
-
-
-
-
-
-
 
 
 
