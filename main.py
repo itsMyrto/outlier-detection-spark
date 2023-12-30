@@ -9,6 +9,9 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.spatial.distance import squareform, pdist
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import MinMaxScaler
+from time import time
+
+start = time()
 
 # Reading the data from the csv and storing it to a panda dataframe
 df = pd.read_csv('data-example2223.csv')
@@ -25,6 +28,10 @@ pd.set_option('display.float_format', '{:.8f}'.format)
 # Normalize data using the MinMax between [0,1]
 scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
+
+# Saving the transformed data back to the df
+df['x'] = X_train[:, 0]
+df['y'] = X_train[:, 1]
 
 # Running the kmeans algorithm using k>>5
 k = 100
@@ -82,12 +89,8 @@ while len(final_clusters) > 5:
             pairwise_distances_centers[merge_clusters[0], i] = np.linalg.norm(new_cluster_center - np.mean(X_train[df['cluster'] == i], axis=0))
             pairwise_distances_centers[i, merge_clusters[0]] = np.linalg.norm(new_cluster_center - np.mean(X_train[df['cluster'] == i], axis=0))
 
-# Storing a copy of the original data before normalization so that we can plot the original data later
-original_df = df.copy()
-
-# Saving the transformed data back to the df
-df['x'] = X_train[:, 0]
-df['y'] = X_train[:, 1]
+# # Storing a copy of the original data before normalization so that we can plot the original data later
+# original_df = df.copy()
 
 # Plotting the final clusters
 preferable_colors = ["#0766AD", "#29ADB2", "#D2DE32", "#B15EFF", "#952323"]
@@ -110,24 +113,21 @@ plt.ylabel('y')
 plt.show()
 
 
-# APPLY DBSCAN TO EACH CLUSTER AND DETECT THE OUTLIERS
+# APPLYING DBSCAN TO EACH CLUSTER TO DETECT THE OUTLIERS
 
-# best parameters for DBSCAN
+# Best parameters for DBSCAN
 min_samples = 22
 eps = 0.035
 
+# Variables for plotting the clusters with their outliers without the normalization
 count = 0
+cluster_outlier_indexes = []
+
 for cluster_id in np.unique(df['cluster']):
     # Get separately the normalized points of each cluster that was computed and saved earlier in the df
     cluster = df[df['cluster'] == cluster_id][['x', 'y']]
     # Transforming the pandas dataframe to a numpy array in order to run DBSCAN for outlier detection
     cluster = np.array(cluster)
-
-    # Get separately the original points of each cluster that was saved earlier in the original_df
-    # in order to plot the outliers on the original data
-    original_cluster = original_df[original_df['cluster'] == cluster_id][['x', 'y']]
-    # Transforming the pandas dataframe to a numpy array for easier plotting
-    original_cluster = np.array(original_cluster)
 
     # start k-plots
     # neighbors = NearestNeighbors(n_neighbors=min_samples)
@@ -145,8 +145,8 @@ for cluster_id in np.unique(df['cluster']):
     dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric='euclidean')
     dbscan.fit(cluster)
     labels = dbscan.labels_
-    # Saving the indexes of the outliers in each cluster
-    outliers = np.where(labels == -1)[0]
+    # Saving the indexes of the outliers in each cluster using the labels from DBSCAN
+    outlier_indexes = np.where(labels == -1)[0]
     # end DBSCAN
 
     # start Z-Scores
@@ -157,6 +157,34 @@ for cluster_id in np.unique(df['cluster']):
     # threshold = 2.288
     # outliers = np.where(abs_z_scores > threshold)[0]
     # end Z-Scores
+
+    # Print the outliers of each cluster if they exist
+    print("Outliers of Cluster ", count, ": ")
+    if len(outlier_indexes) == 0:
+        # If a cluster has no outliers then print "No outliers found"
+        print("No outliers found")
+    else:
+        # Get the normalized points of the outliers for the cluster data
+        outliers = cluster[outlier_indexes]
+        # Inverse Transforming the points of the outliers to print the original data and not the normalized
+        original_outliers = scaler.inverse_transform(outliers)
+        print(original_outliers)
+
+    # keep the outlier_indexes indexes so that we can plot them later
+    cluster_outlier_indexes.append(outlier_indexes)
+    count += 1
+
+
+count = 0
+for cluster_id in np.unique(df['cluster']):
+    # Get separately the normalized points of each cluster that was computed and saved earlier in the df
+    cluster = df[df['cluster'] == cluster_id][['x', 'y']]
+    # Transforming the pandas dataframe to a numpy array in order to run DBSCAN for outlier detection
+    cluster = np.array(cluster)
+    # Inverse Transforming the points of the cluster to plot the original data and not the normalized
+    original_cluster = scaler.inverse_transform(cluster)
+    # Get the indexes of the cluster's outliers
+    outliers = cluster_outlier_indexes[count]
 
     # Plot the original points of each cluster
     plt.scatter(
@@ -176,7 +204,7 @@ plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
 
-
+print("Rntime: ", time()-start)
 
 
 # ΝΕΥΡΩΝΙΚΟ ΔΙΚΤΥΟ
