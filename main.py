@@ -58,7 +58,6 @@ final_clusters = list(range(k))
 pairwise_distances_centers = squareform(pdist(kmeans.cluster_centers_))
 
 # This loop merges clusters based on the center distances, until 5 clusters are left
-
 while len(final_clusters) > 5:
     # Find the closest clusters among the remaining connected clusters
     # Setting the min distance equal to infinity and the merging clusters as 0,0
@@ -88,9 +87,6 @@ while len(final_clusters) > 5:
             # Calculating the new pairwise distance between the merged cluster and other clusters
             pairwise_distances_centers[merge_clusters[0], i] = np.linalg.norm(new_cluster_center - np.mean(X_train[df['cluster'] == i], axis=0))
             pairwise_distances_centers[i, merge_clusters[0]] = np.linalg.norm(new_cluster_center - np.mean(X_train[df['cluster'] == i], axis=0))
-
-# # Storing a copy of the original data before normalization so that we can plot the original data later
-# original_df = df.copy()
 
 # Plotting the final clusters
 preferable_colors = ["#0766AD", "#29ADB2", "#D2DE32", "#B15EFF", "#952323"]
@@ -123,6 +119,7 @@ eps = 0.035
 count = 0
 cluster_outlier_indexes = []
 
+# This loop iterates the data of each cluster based on the labels that were assigned to the points by the previous process
 for cluster_id in np.unique(df['cluster']):
     # Get separately the normalized points of each cluster that was computed and saved earlier in the df
     cluster = df[df['cluster'] == cluster_id][['x', 'y']]
@@ -170,11 +167,12 @@ for cluster_id in np.unique(df['cluster']):
         original_outliers = scaler.inverse_transform(outliers)
         print(original_outliers)
 
-    # keep the outlier_indexes indexes so that we can plot them later
+    # keep the outlier_indexes so that we can plot them later
     cluster_outlier_indexes.append(outlier_indexes)
     count += 1
 
 
+# Plotting the final clusters and their outliers
 count = 0
 for cluster_id in np.unique(df['cluster']):
     # Get separately the normalized points of each cluster that was computed and saved earlier in the df
@@ -204,7 +202,8 @@ plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
 
-print("Rntime: ", time()-start)
+
+print("Runtime: ", time()-start)
 
 
 # ΝΕΥΡΩΝΙΚΟ ΔΙΚΤΥΟ
