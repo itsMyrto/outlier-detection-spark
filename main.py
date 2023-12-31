@@ -112,7 +112,7 @@ plt.show()
 # APPLYING DBSCAN TO EACH CLUSTER TO DETECT THE OUTLIERS
 
 # Best parameters for DBSCAN
-min_samples = 22
+min_samples = 57
 eps = 0.035
 
 # Variables for plotting the clusters with their outliers without the normalization
@@ -197,7 +197,7 @@ for cluster_id in np.unique(df['cluster']):
     count += 1
 
 # Show final plot that contains every cluster and it's outliers
-plt.title('Scatter Plot of 5 Final Clusters and their Outliers')
+plt.title('Scatter Plot of 5 Final Clusters and their Outliers using DBSCAN')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
