@@ -205,68 +205,64 @@ plt.show()
 
 print("Runtime: ", time()-start)
 
+outliers = []
 
-# ΝΕΥΡΩΝΙΚΟ ΔΙΚΤΥΟ
+for cluster_id_final in range(5):
 
-#
-# outliers = []
-#
-# for cluster_id_final in range(5):
-#
-#     cluster_data_final = X_train[df['cluster'] == final_clusters[cluster_id_final]]
-#
-#     # Train autoencoder
-#     OPTIMIZER_1 = Adam(learning_rate=0.001)
-#     autoencoder = Sequential()
-#     autoencoder.add(InputLayer(input_shape=(2,)))
-#     autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
-#     autoencoder.add(Dense(units=3, activation="linear", use_bias=True))
-#     autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
-#     autoencoder.add(Dense(units=1, activation="linear", use_bias=True))
-#     autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
-#     autoencoder.add(Dense(units=3, activation="linear", use_bias=True))
-#     autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
-#     autoencoder.compile(optimizer=OPTIMIZER_1, loss='mean_squared_error')
-#     autoencoder.fit(cluster_data_final, cluster_data_final, epochs=25, batch_size=32, shuffle=True)
-#
-#     # Predict and calculate reconstruction errors
-#     reconstructed_data = autoencoder.predict(cluster_data_final)
-#     reconstruction_errors = np.mean(np.square(cluster_data_final - reconstructed_data), axis=1)
-#
-#     # Set a threshold for outliers within the cluster
-#     threshold = np.percentile(reconstruction_errors, 99.9)
-#
-#     # Identify outliers within the cluster
-#     cluster_outliers = cluster_data_final[reconstruction_errors > threshold]
-#     outliers.append(cluster_outliers)
-#
-# # Concatenate outliers from all clusters
-# all_outliers = np.concatenate(outliers, axis=0)
-#
-#
-# # Plot original data and connected clusters
-# for cluster_id_final in range(5):
-#     cluster_data_final = df[df['cluster'] == final_clusters[cluster_id_final]]
-#     plt.scatter(
-#         cluster_data_final['x'],
-#         cluster_data_final['y'],
-#         label=f'Final Cluster {cluster_id_final}',
-#         alpha=0.5,
-#         c=preferable_colors[cluster_id_final % len(preferable_colors)]
-#     )
-#
-# all_outliers = np.concatenate(outliers)
-#
-# # Plot outliers
-# plt.scatter(
-#     all_outliers[:, 0],
-#     all_outliers[:, 1],
-#     label='Outliers',
-#     color='black',
-#     marker='x'
-# )
-#
-# plt.title('Outlier Detection with Autoencoders')
-# plt.xlabel('x')
-# plt.ylabel('y')
-# plt.show()
+    cluster_data_final = X_train[df['cluster'] == final_clusters[cluster_id_final]]
+
+    # Train autoencoder
+    OPTIMIZER_1 = Adam(learning_rate=0.001)
+    autoencoder = Sequential()
+    autoencoder.add(InputLayer(input_shape=(2,)))
+    autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
+    autoencoder.add(Dense(units=3, activation="linear", use_bias=True))
+    autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
+    autoencoder.add(Dense(units=1, activation="linear", use_bias=True))
+    autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
+    autoencoder.add(Dense(units=3, activation="linear", use_bias=True))
+    autoencoder.add(Dense(units=2, activation="linear", use_bias=True))
+    autoencoder.compile(optimizer=OPTIMIZER_1, loss='mean_squared_error')
+    autoencoder.fit(cluster_data_final, cluster_data_final, epochs=25, batch_size=32, shuffle=True)
+
+    # Predict and calculate reconstruction errors
+    reconstructed_data = autoencoder.predict(cluster_data_final)
+    reconstruction_errors = np.mean(np.square(cluster_data_final - reconstructed_data), axis=1)
+
+    # Set a threshold for outliers within the cluster
+    threshold = np.percentile(reconstruction_errors, 99.9)
+
+    # Identify outliers within the cluster
+    cluster_outliers = cluster_data_final[reconstruction_errors > threshold]
+    outliers.append(cluster_outliers)
+
+# Concatenate outliers from all clusters
+all_outliers = np.concatenate(outliers, axis=0)
+
+
+# Plot original data and connected clusters
+for cluster_id_final in range(5):
+    cluster_data_final = df[df['cluster'] == final_clusters[cluster_id_final]]
+    plt.scatter(
+        cluster_data_final['x'],
+        cluster_data_final['y'],
+        label=f'Final Cluster {cluster_id_final}',
+        alpha=0.5,
+        c=preferable_colors[cluster_id_final % len(preferable_colors)]
+    )
+
+all_outliers = np.concatenate(outliers)
+
+# Plot outliers
+plt.scatter(
+    all_outliers[:, 0],
+    all_outliers[:, 1],
+    label='Outliers',
+    color='black',
+    marker='x'
+)
+
+plt.title('Outlier Detection with Autoencoders')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
