@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-# from keras import Sequential
-# from keras.src.engine.input_layer import InputLayer
-# from keras.src.layers import Dense
-# from keras.src.optimizers import Adam
+from keras import Sequential
+from keras.src.engine.input_layer import InputLayer
+from keras.src.layers import Dense
+from keras.src.optimizers import Adam
 from sklearn.neighbors import NearestNeighbors
 from scipy.spatial.distance import squareform, pdist
 from sklearn.cluster import KMeans, DBSCAN
