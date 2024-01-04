@@ -9,6 +9,8 @@ from pyspark.sql import SparkSession
 from pyspark.ml.clustering import KMeans
 
 
+# This function takes as a parameter a column, finds for that specific column the minimum and maximum value 
+# and calculates the scaled values with the MinMax method in order ot bring all the values in the range of [0,1]
 def min_max_scaling(column):
     min_value = df.agg(F.min(column)).collect()[0][0]
     max_value = df.agg(F.max(column)).collect()[0][0]
@@ -20,16 +22,21 @@ if __name__ == "__main__":
     """
         Usage: pi [partitions]
     """
-
+    
+    # This checks if the correct parameters are given
+    # If not it prints a message on how to run the script
     if len(sys.argv) != 2:
         print("Usage: python script.py <filename>")
         sys.exit(1)
 
     # Extract the filename from the command line argument
     filename = sys.argv[1]
-
+    
+    # Starting the timer 
     start = time()
-
+    
+    
+    # Creating a spark session at port 7071
     spark = SparkSession.builder \
         .appName("example") \
         .config("spark.driver.port", "7071") \
@@ -39,36 +46,47 @@ if __name__ == "__main__":
     df = spark.read.csv(filename, header=False, inferSchema=True).na.drop().withColumnRenamed("_c0",
                                                                                                             "x").withColumnRenamed(
         "_c1", "y")
+                                                                                                            
+     
+    # Creating two new columns x_scaled and y_scaled in order to store the scaled values
     df = df.withColumn("x_scaled", min_max_scaling("x")).withColumn("y_scaled", min_max_scaling("y"))
-
+    
+    # Vectorizing the scaled values in anue column called features. This is necessary in order for the KMeans to run
     assembler = VectorAssembler(inputCols=["x_scaled", "y_scaled"], outputCol="features")
     df = assembler.transform(df)
-
-    k = 60
+    
+    # Applying the spark KMeans algorithm for 150 centers, where the clusterign is based on the features column. 
+    # Also adding a new column in the df called cluster that stores for each point the number of the cluster they have been assigned to 
+    k = 150
     kmeans = KMeans(k=k, seed=42, featuresCol="features", predictionCol="cluster")
     model = kmeans.fit(df)
     df = model.transform(df)
-
+    
+    # Selecting only the necessary columns - dropping the features column because it was needed only for applying KMeans
     df = df.select("cluster", "x_scaled", "y_scaled", "x", "y")
-    simple_df = df.select("cluster")
-
+    # simple_df = df.select("cluster")
+    
+    # Getting the cluster centers
     cluster_centers_np = model.clusterCenters()
-
+    
+    # Unwrapping the arrays that the previous method returned into a list of lists
     cluster_center_lists = [[center[0], center[1]] for center in cluster_centers_np]
+    # Turning the previous list into a numpy array for easier calculations
     cluster_centers_lists = np.array(cluster_center_lists)
 
     # This list at first contains all the cluster ids, but eventually it will end with 5 clusters
     final_clusters = list(range(k))
 
-    # Calculating the distance between all the cluster centers. This will be a kxk matrix.
+    # Calculating the distance between all the cluster centers. This will be a kxk numpy matrix.
     # Matrix[i, j] contains the Euclidean distance between the centers of cluster i and j
     pairwise_distances_centers = squareform(pdist(cluster_center_lists))
 
-    # Convert the PySpark DataFrame to a Pandas DataFrame
+    # Convert the PySpark DataFrame to a Pandas DataFrame and then to a numpy array for easy calculations
     cluster_df = df.select("cluster", "x_scaled", "y_scaled").toPandas().to_numpy()
-
+    
+    # This column contains the cluster predicitions assigned from the KMeans
     new_column = cluster_df[:, 0].copy()
-
+    # This is a dictionary that will contain for each starting cluster, the final cluster that was merged with 
     dictionary = {}
 
     # This loop merges clusters based on the center distances, until 5 clusters are left
@@ -105,12 +123,15 @@ if __name__ == "__main__":
                     mean_values - np.mean(cluster_df[cluster_df[:, 0] == i, 1:], axis=0))
                 pairwise_distances_centers[i, merge_clusters[0]] = np.linalg.norm(
                     mean_values - np.mean(cluster_df[cluster_df[:, 0] == i, 1:], axis=0))
-
+    
+    # This are the final cluster predicitions
     another_column = cluster_df[:, 0]
-
+    
+    # Updating the dictionary
     for i in range(0, len(new_column)):
         dictionary[new_column[i]] = int(another_column[i])
-
+    
+    # Updating the cluster column with the final clusters with the help of the dictionary
     df = df.withColumn("cluster", F.udf(lambda x: dictionary[x])("cluster"))
 
     # Define a Window specification based on the 'cluster' column
@@ -142,7 +163,8 @@ if __name__ == "__main__":
     # Identify outliers
     df = df.withColumn("is_outlier_x", F.when(F.col("abs_z_score_x") > F.col("threshold"), 1).otherwise(0)) \
         .withColumn("is_outlier_y", F.when(F.col("abs_z_score_y") > F.col("threshold"), 1).otherwise(0))
-
+    
+    # Collecting and printing outliers
     outliers_df = df.filter((F.col("is_outlier_x") == 1) | (F.col("is_outlier_y") == 1)).select("x", "y")
     outliers_df.show()
 
